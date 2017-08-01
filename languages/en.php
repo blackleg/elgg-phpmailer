@@ -11,7 +11,8 @@ $english = array(
 	'phpmailer:username' => 'Username',
 	'phpmailer:password' => 'Password',
 	'phpmailer:nonstd_mta' => 'Using Nonstandard MTA (end of line = \n)',
-	'phpmailer:ssl' => 'Use SSL Authorization',
+	'phpmailer:ssl' => 'Use SSL',
+        'phpmailer:tls' => 'Use TLS',
 	'phpmailer:port' => 'Port Number',
 );
 					

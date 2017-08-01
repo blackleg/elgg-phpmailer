@@ -11,14 +11,81 @@
 
 elgg_register_event_handler('init', 'system', 'phpmailer_init');
 
+elgg_register_event_handler('upgrade', 'system', 'phpmailer_upgrade');
+
 /**
  * initialize the phpmailer plugin
  */
 function phpmailer_init() {
-	if (elgg_get_plugin_setting('phpmailer_override', 'phpmailer') != 'disabled') {
+	if (elgg_get_plugin_setting('elgg_phpmailer_override', 'phpmailer') == 'enabled') {
 		register_notification_handler('email', 'phpmailer_notify_handler');
 		elgg_register_plugin_hook_handler('email', 'system', 'phpmailer_mail_override');
 	}
+}
+
+
+/**
+ * Upgrade php mailer
+ */
+function phpmailer_upgrade() {
+    
+   $old_override = elgg_get_plugin_setting('phpmailer_override', 'phpmailer');
+   if (isset($old_override)) {
+       elgg_set_plugin_setting('elgg_phpmailer_override', $old_override, 'phpmailer');
+       elgg_unset_plugin_setting('phpmailer_override', 'phpmailer');		
+   }
+   
+   $old_smtp = elgg_get_plugin_setting('phpmailer_smtp', 'phpmailer');
+   if (isset($old_smtp)) {
+       elgg_set_plugin_setting('elgg_phpmailer_smtp', $old_smtp, 'phpmailer');
+       elgg_unset_plugin_setting('phpmailer_smtp', 'phpmailer');		
+   }
+   
+   $old_host = elgg_get_plugin_setting('phpmailer_host', 'phpmailer');
+   if (isset($old_host)) {
+       elgg_set_plugin_setting('elgg_phpmailer_host', $old_host, 'phpmailer');
+       elgg_unset_plugin_setting('phpmailer_host', 'phpmailer');		
+   }
+   
+   $old_ssl = elgg_get_plugin_setting('ep_phpmailer_ssl', 'phpmailer');
+   $old_port = elgg_get_plugin_setting('ep_phpmailer_port', 'phpmailer');
+   if (isset($old_ssl) && $old_ssl && isset($old_port)) {
+        elgg_set_plugin_setting('elgg_phpmailer_port', $old_port, 'phpmailer');
+        elgg_unset_plugin_setting('ep_phpmailer_port', 'phpmailer');		
+   } else if (isset($old_port)) {
+        elgg_set_plugin_setting('elgg_phpmailer_port', 25, 'phpmailer');
+        elgg_unset_plugin_setting('ep_phpmailer_port', 'phpmailer');
+   }
+   
+   if (isset($old_ssl)) {
+        elgg_set_plugin_setting('elgg_phpmailer_ssl', $old_ssl, 'phpmailer');
+        elgg_unset_plugin_setting('ep_phpmailer_ssl', 'phpmailer');		
+   }
+   
+   $old_nonstd_mta = elgg_get_plugin_setting('nonstd_mta', 'phpmailer');
+   if (isset($old_nonstd_mta)) {
+       elgg_set_plugin_setting('elgg_nonstd_mta', $old_nonstd_mta, 'phpmailer');
+       elgg_unset_plugin_setting('nonstd_mta', 'phpmailer');		
+   }
+   
+   
+   $old_smtp_auth = elgg_get_plugin_setting('phpmailer_smtp_auth', 'phpmailer');
+   if (isset($old_smtp_auth)) {
+       elgg_set_plugin_setting('elgg_phpmailer_smtp_auth', $old_smtp_auth, 'phpmailer');
+       elgg_unset_plugin_setting('phpmailer_smtp_auth', 'phpmailer');		
+   }
+   
+   $old_username = elgg_get_plugin_setting('phpmailer_username', 'phpmailer');
+   if (isset($old_username)) {
+       elgg_set_plugin_setting('elgg_phpmailer_username', $old_username, 'phpmailer');
+       elgg_unset_plugin_setting('phpmailer_username', 'phpmailer');		
+   }
+   
+   $old_password = elgg_get_plugin_setting('phpmailer_password', 'phpmailer');
+   if (isset($old_password)) {
+       elgg_set_plugin_setting('elgg_phpmailer_password', $old_password, 'phpmailer');
+       elgg_unset_plugin_setting('phpmailer_password', 'phpmailer');		
+   }
 }
 
 /**
@@ -154,8 +221,9 @@ function phpmailer_send($from, $from_name, $to, $to_name, $subject, $body, array
 
 	// set bccs if exists
 	if ($bcc && is_array($bcc)) {
-		foreach ($bcc as $address)
+		foreach ($bcc as $address) {
 			$phpmailer->AddBCC($address);
+                }
 	}
 
 	$phpmailer->Subject = $subject;
@@ -189,27 +257,32 @@ function phpmailer_send($from, $from_name, $to, $to_name, $subject, $body, array
 		}
 	}
 
-	$is_smtp   = elgg_get_plugin_setting('phpmailer_smtp', 'phpmailer');
-	$smtp_host = elgg_get_plugin_setting('phpmailer_host', 'phpmailer');
-	$smtp_auth = elgg_get_plugin_setting('phpmailer_smtp_auth', 'phpmailer');
+	$is_smtp   = elgg_get_plugin_setting('elgg_phpmailer_smtp', 'phpmailer');
+	$smtp_host = elgg_get_plugin_setting('elgg_phpmailer_host', 'phpmailer');
+	$smtp_auth = elgg_get_plugin_setting('elgg_phpmailer_smtp_auth', 'phpmailer');
 
-	$is_ssl    = elgg_get_plugin_setting('ep_phpmailer_ssl', 'phpmailer');
-	$ssl_port  = elgg_get_plugin_setting('ep_phpmailer_port', 'phpmailer');
+	$is_ssl    = elgg_get_plugin_setting('elgg_phpmailer_ssl', 'phpmailer');
+        $is_tls    = elgg_get_plugin_setting('elgg_phpmailer_tls', 'phpmailer');
+	$smtp_port  = elgg_get_plugin_setting('elgg_phpmailer_port', 'phpmailer');
 
 	if ($is_smtp && isset($smtp_host)) {
 		$phpmailer->IsSMTP();
 		$phpmailer->Host = $smtp_host;
+                $phpmailer->Port = $smtp_port;
 		$phpmailer->SMTPAuth = false;
+                
 		if ($smtp_auth) {
 			$phpmailer->SMTPAuth = true;
-			$phpmailer->Username = elgg_get_plugin_setting('phpmailer_username', 'phpmailer');
-			$phpmailer->Password = elgg_get_plugin_setting('phpmailer_password', 'phpmailer');
-
-			if ($is_ssl) {
-				$phpmailer->SMTPSecure = "ssl";
-				$phpmailer->Port = $ssl_port;
-			}
+			$phpmailer->Username = elgg_get_plugin_setting('elgg_phpmailer_username', 'phpmailer');
+			$phpmailer->Password = elgg_get_plugin_setting('elgg_phpmailer_password', 'phpmailer');
 		}
+                
+                
+                if ($is_ssl) {
+                    $phpmailer->SMTPSecure = "ssl";
+                } else if ($is_tls) {
+                    $phpmailer->SMTPSecure = "tls";
+                }
 	}
 	else {
 		// use php's mail
