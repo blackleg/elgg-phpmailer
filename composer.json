@@ -1,5 +1,5 @@
 {
-	"name": "blackleg/phpmailer",
+	"name": "blackleg/elgg-phpmailer",
 	"description": "Use PHPMailer for sending email.",
 	"type": "elgg-plugin",
 	"keywords": ["elgg", "plugin"],
